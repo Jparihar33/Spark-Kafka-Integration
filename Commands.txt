@@ -1,0 +1,44 @@
+### Spark Integration - Apache kafka
+
+ssh -i "RHEL.pem" ec2-user@32.173.114.228
+cd downloads/kafka_2.12-2.3.0
+
+
+# Start Zookeeper
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+
+# Start Kafka Server
+bin/kafka-server-start.sh config/server.properties
+
+#Create Kafka Topic
+bin/kafka-topics.sh \
+  --create \
+  --topic kafka-new-topic \
+  --zookeeper localhost:2181 \
+  --partitions 1 \
+  --replication-factor 1
+
+#Start Publisher
+bin/kafka-console-producer.sh \
+  --topic kafka-new-topic \
+  --broker-list localhost:9092 
+
+#start spark job:
+export SPARK_KAFKA_VERSION=0.10
+spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5 read_from_kafka
+
+
+#Start Consumer
+bin/kafka-console-consumer.sh \
+  --topic kafka-new-topic \
+  --from-beginning \
+  --bootstrap-server localhost:9092
+
+##start spark job:
+export SPARK_KAFKA_VERSION=0.10
+spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5 write_to_kafka
+
+
+#Move data to HDFS
+hadoop fs -put file_name.csv testdir/filename.csv 
